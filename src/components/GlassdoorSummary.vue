@@ -48,9 +48,14 @@
             class="flex items-center justify-start"
         >
             <img
+                v-if="data.image_url"
                 :src="data.image_url"
                 class="h-16 w-16 mr-2"
             >
+            <div
+                v-else
+                class="h-16 w-16 mr-2 bg-grey"
+            />
             <div class="flex flex-col justify-center">
                 <a
                     :href="data.url"
@@ -59,7 +64,10 @@
                 >
                     {{ data.name }} ({{ data.total_reviews }} reviews)
                 </a>
-                <GlassdoorRating :rating="data.rating" />
+                <GlassdoorRating
+                    v-if="data.rating"
+                    :rating="data.rating"
+                />
             </div>
         </div>
 

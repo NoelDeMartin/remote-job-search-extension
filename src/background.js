@@ -14,7 +14,7 @@ browser.contextMenus.onClicked.addListener(function(info, tab) {
             type: 'panel',
             url: 'build/panel.html?url=' + encodeURIComponent(info.linkUrl),
             width: 500,
-            height: 360,
+            height: 400,
         });
     }
 });

@@ -35,7 +35,14 @@ export default class CompanyAnalyzer {
                 while (dom.body.getElementsByTagName('script').length > 0) {
                     dom.body.getElementsByTagName('script')[0].remove();
                 }
-                analysis.name = dom.head.getElementsByTagName('title')[0].innerText;
+
+                const titles = dom.head.getElementsByTagName('title');
+                if (titles.length > 0) {
+                    analysis.name = [0].innerText;
+                } else {
+                    analysis.name = '';
+                }
+
                 return dom;
             })
             .then(dom => {
@@ -48,6 +55,7 @@ export default class CompanyAnalyzer {
             .then(text => {
                 this.searchKeyword(analysis, 'Remote', /remote/gi, text);
                 this.searchKeyword(analysis, 'Distributed', /distributed/gi, text);
+                this.searchKeyword(analysis, 'Decentralized', /decentralized/gi, text);
                 this.searchKeyword(analysis, 'Work anywhere', /work\sanywhere/gi, text);
 
                 return url;
@@ -69,14 +77,24 @@ export default class CompanyAnalyzer {
                         analysis.glassdoor = {
                             url: resultDiv.getElementsByClassName('header')[0].getElementsByTagName('a')[0].href,
                             name: resultDiv.getElementsByClassName('header')[0].children[0].textContent,
-                            total_reviews: parseInt(
+                        };
+
+                        const logos = resultDiv.getElementsByClassName('logo')[0].getElementsByTagName('img');
+                        if (logos.length > 0) {
+                            analysis.glassdoor.image_url = logos[0].src;
+                        }
+
+                        const rating = resultDiv.getElementsByClassName('bigRating');
+                        if (rating.length > 0) {
+                            analysis.glassdoor.total_reviews = parseInt(
                                 resultDiv.getElementsByClassName('empLinks')[0]
                                     .getElementsByClassName('reviews')[0]
                                     .getElementsByClassName('num')[0].innerText
-                            ),
-                            rating: parseFloat(resultDiv.getElementsByClassName('bigRating')[0].innerText),
-                            image_url: resultDiv.getElementsByClassName('logo')[0].getElementsByTagName('img')[0].src,
-                        };
+                            );
+                            analysis.glassdoor.rating = parseFloat(rating[0].innerText);
+                        } else {
+                            analysis.glassdoor.total_reviews = 0;
+                        }
                     }
                 }
             });
@@ -101,7 +119,10 @@ export default class CompanyAnalyzer {
     }
 
     static glassdoorSearchUrl(analysis) {
-        const query = analysis.domain.replace('.', '-');
+        let query = analysis.domain.replace('.', '-');
+        if (query.startsWith('www-')) {
+            query = query.substr(4);
+        }
         return 'https://www.glassdoor.com/Reviews/' + query + '-reviews-SRCH_KE0,' + query.length + '.htm';
     }
 }
