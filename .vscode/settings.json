@@ -1,0 +1,23 @@
+{
+    "emmet.syntaxProfiles": {
+        "erb": "html",
+        "vue-html": "html",
+        "vue": "html"
+    },
+    "emmet.includeLanguages": {
+        "erb": "html"
+    },
+    "eslint.validate": [
+        "javascript",
+        "vue"
+    ],
+    "files.associations": {
+        ".stylelintrc": "json"
+    },
+    "files.trimTrailingWhitespace": true,
+    "vsicons.projectDetection.autoReload": true,
+    "workbench.iconTheme": "vscode-icons",
+    "css.validate": false,
+    "scss.validate": false,
+    "stylelint.enable": true
+}

@@ -1,0 +1,26 @@
+{
+
+    "manifest_version": 2,
+    "name": "remote-jobs-search-extension",
+    "version": "0.0.1",
+
+    "description": "Browser extension that helps you on your remote job search",
+
+    "icons": {
+        "48": "icons/icon.svg",
+        "96": "icons/icon.svg",
+        "128": "icons/icon.svg"
+    },
+
+    "background": {
+        "scripts": ["build/background.js"]
+    },
+
+    "permissions": [
+        "contextMenus",
+        "<all_urls>",
+        "storage",
+        "tabs"
+    ]
+
+}
