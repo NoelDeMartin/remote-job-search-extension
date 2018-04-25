@@ -15,7 +15,7 @@
         >
 
             <h1 class="text-3xl text-center w-full truncate">{{ analysis.name }}</h1>
-            <h2 class="text-base text-center w-full">{{ analysis.domain }}</h2>
+            <h2 class="text-base text-center w-full">{{ analysis.url.hostname }}</h2>
 
             <div class="my-2 flex justify-around w-full">
                 <a

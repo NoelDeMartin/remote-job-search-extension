@@ -1,69 +1,73 @@
 import CompanyAnalysis from './CompanyAnalysis';
 
+import { stringsSimilarity } from './utils';
+
 export default class CompanyAnalyzer {
     static domParser = new DOMParser();
 
     analyze(url) {
         const analysis = new CompanyAnalysis(url);
-
-        analysis.addSection('Homepage', analysis.protocol + '//' + analysis.domain);
-
-        const visited = [];
-        const parseWebsite = url => {
-            return this.constructor.parseWebsiteUrl(analysis, url)
+        const processedUrls = [];
+        const processWebsiteSections = url => {
+            return this.constructor.parseWebsite(analysis, url)
                 .then(url => {
-                    visited.push(url);
+                    processedUrls.push(url);
 
                     for (let section in analysis.sections) {
-                        if (visited.indexOf(analysis.sections[section]) === -1) {
-                            return parseWebsite(analysis.sections[section]);
+                        if (processedUrls.indexOf(analysis.sections[section]) === -1) {
+                            return processWebsiteSections(analysis.sections[section]);
                         }
+                    }
+
+                    if (processedUrls.indexOf(analysis.originalUrl) === -1) {
+                        return processWebsiteSections(analysis.originalUrl);
                     }
                 });
         };
 
-        return parseWebsite(analysis.url)
+        analysis.addSection('Home', analysis.url.protocol + '//' + analysis.url.hostname);
+
+        return processWebsiteSections(analysis.sections['Home'])
             .then(() => this.constructor.parseGlassdoor(analysis))
             .then(() => analysis);
     }
 
-    static parseWebsiteUrl(analysis, url) {
+    static parseWebsite(analysis, url) {
         return fetch(url)
             .then(res => res.text())
-            .then(html => {
-                const dom = this.domParser.parseFromString(html, 'text/html');
-                while (dom.body.getElementsByTagName('script').length > 0) {
-                    dom.body.getElementsByTagName('script')[0].remove();
-                }
-
-                const titles = dom.head.getElementsByTagName('title');
-                if (titles.length > 0) {
-                    analysis.name = [0].innerText;
-                } else {
-                    analysis.name = '';
-                }
-
-                return dom;
-            })
+            .then(html => this.prepareWebsiteDom(analysis, html))
             .then(dom => {
-                this.searchSection(analysis, 'Careers', 'careers', dom);
-                this.searchSection(analysis, 'About', 'about', dom);
-                this.searchSection(analysis, 'Team', 'team', dom);
-                this.searchSection(analysis, 'Jobs', 'jobs', dom);
+                this.searchSections(
+                    analysis,
+                    dom,
+                    {
+                        'Careers': /careers/gi,
+                        'About': /about/gi,
+                        'Team': /team/gi,
+                        'Jobs': /jobs|work\swith\sus|hiring|open\spositions/gi,
+                    }
+                );
+
                 return dom.body.textContent;
             })
             .then(text => {
-                this.searchKeyword(analysis, 'Remote', /remote/gi, text);
-                this.searchKeyword(analysis, 'Distributed', /distributed/gi, text);
-                this.searchKeyword(analysis, 'Decentralized', /decentralized/gi, text);
-                this.searchKeyword(analysis, 'Work anywhere', /work\sanywhere/gi, text);
+                this.searchKeywords(
+                    analysis,
+                    text,
+                    {
+                        'Remote': /remote/gi,
+                        'Distributed': /distributed/gi,
+                        'Decentralized': /decentralized/gi,
+                        'Work anywhere': /work\sanywhere/gi,
+                    }
+                );
 
                 return url;
             });
     }
 
-    static parseGlassdoor(analysis) {
-        return fetch(this.glassdoorSearchUrl(analysis))
+    static parseGlassdoor(analysis, useDomain = true) {
+        return fetch(this.glassdoorSearchUrl(useDomain ? analysis.url.hostname : analysis.name))
             .then(res => res.text())
             .then(html => {
                 const dom = this.domParser.parseFromString(html, 'text/html');
@@ -95,31 +99,66 @@ export default class CompanyAnalyzer {
                         } else {
                             analysis.glassdoor.total_reviews = 0;
                         }
+
+                        return;
                     }
+                }
+
+                if (useDomain) {
+                    return this.parseGlassdoor(analysis, false);
                 }
             });
     }
 
-    static searchSection(analysis, name, search, dom) {
-        const link = dom.evaluate(
-            '/html/body//a[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"), "' + search + '")]',
-            dom,
-            null,
-            XPathResult.FIRST_ORDERED_NODE_TYPE,
-            null
-        ).singleNodeValue;
-        if (link && link.getAttribute('href') && !link.getAttribute('href').startsWith('mailto:')) {
-            analysis.addSection(name, link.getAttribute('href'));
+    static prepareWebsiteDom(analysis, html) {
+        const dom = this.domParser.parseFromString(html, 'text/html');
+
+        while (dom.body.getElementsByTagName('script').length > 0) {
+            dom.body.getElementsByTagName('script')[0].remove();
+        }
+
+        if (!analysis.name) {
+            const titles = dom.head.getElementsByTagName('title');
+            if (titles.length > 0) {
+                let name = titles[0].innerText;
+
+                const separators = ['-', '|', '–', '—'];
+                const domainBasename = analysis.url.hostname.split('.').reduce((a, b) => a.length > b.length ? a : b);
+                for (let separator of separators) {
+                    name = name.split(separator).map(str => str.trim()).reduce((a, b) => {
+                        return stringsSimilarity(a, domainBasename) > stringsSimilarity(b, domainBasename) ? a : b;
+                    });
+                }
+
+                analysis.name = name;
+            }
+        }
+
+        return dom;
+    }
+
+    static searchSections(analysis, dom, sections) {
+        for (let link of dom.body.getElementsByTagName('a')) {
+            const url = link.getAttribute('href');
+            if (!url.startsWith('mailto:')) {
+                for (let name in sections) {
+                    if (!(name in analysis.sections) && link.innerText.trim().match(sections[name]) !== null) {
+                        analysis.addSection(name, url);
+                    }
+                }
+            }
         }
     }
 
-    static searchKeyword(analysis, name, regex, text) {
-        const matches = text.match(regex);
-        analysis.addKeyword(name, (matches && matches.length) || 0);
+    static searchKeywords(analysis, text, keywords) {
+        for (let name in keywords) {
+            const matches = text.match(keywords[name]);
+            analysis.addKeyword(name, (matches && matches.length) || 0);
+        }
     }
 
-    static glassdoorSearchUrl(analysis) {
-        let query = analysis.domain.replace('.', '-');
+    static glassdoorSearchUrl(search) {
+        let query = search.replace(/\.|\s/g, '-').toLowerCase();
         if (query.startsWith('www-')) {
             query = query.substr(4);
         }

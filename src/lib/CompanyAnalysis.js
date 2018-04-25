@@ -1,19 +1,15 @@
 export default class {
     constructor(url) {
-        url = new URL(url);
-        this.url = url.href;
-        this.protocol = url.protocol;
-        this.domain = url.hostname;
-        this.pathname = url.pathname;
+        this.url = new URL(url);
         this.sections = {};
         this.keywords = {};
     }
 
     addSection(name, url) {
         if (url.startsWith('/')) {
-            url = this.protocol + '//' + this.domain + url;
+            url = this.url.protocol + '//' + this.url.hostname + url;
         } else if (!url.startsWith('http')) {
-            url = this.protocol + '//' + this.domain + this.pathname + '/' + url;
+            url = this.url.protocol + '//' + this.url.hostname + this.url.pathname + '/' + url;
         }
         this.sections[name] = url;
     }
@@ -24,5 +20,9 @@ export default class {
         } else {
             this.keywords[name] = count;
         }
+    }
+
+    get originalUrl() {
+        return this.url.href;
     }
 }
