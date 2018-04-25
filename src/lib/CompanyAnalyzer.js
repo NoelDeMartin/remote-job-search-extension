@@ -140,7 +140,7 @@ export default class CompanyAnalyzer {
     static searchSections(analysis, dom, sections) {
         for (let link of dom.body.getElementsByTagName('a')) {
             const url = link.getAttribute('href');
-            if (!url.startsWith('mailto:')) {
+            if (url && !url.startsWith('mailto:')) {
                 for (let name in sections) {
                     if (!(name in analysis.sections) && link.innerText.trim().match(sections[name]) !== null) {
                         analysis.addSection(name, url);

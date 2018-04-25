@@ -6,7 +6,9 @@ export default class {
     }
 
     addSection(name, url) {
-        if (url.startsWith('/')) {
+        if (url.startsWith('//')) {
+            url = this.url.protocol + url;
+        } else if (url.startsWith('/')) {
             url = this.url.protocol + '//' + this.url.hostname + url;
         } else if (!url.startsWith('http')) {
             url = this.url.protocol + '//' + this.url.hostname + this.url.pathname + '/' + url;
