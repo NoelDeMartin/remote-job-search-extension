@@ -1,4 +1,6 @@
-import CompanyAnalysis from './CompanyAnalysis';
+
+import Extension from './Extension';
+import CompanyInformation from './CompanyInformation';
 
 import { stringsSimilarity } from './utils';
 
@@ -6,61 +8,61 @@ export default class CompanyAnalyzer {
     static domParser = new DOMParser();
 
     analyzeLink(url) {
-        const analysis = new CompanyAnalysis(url);
+        const info = new CompanyInformation(url);
 
-        analysis.url = new URL(url);
-        analysis.addSection('Home', analysis.url.protocol + '//' + analysis.url.hostname);
+        info.url = new URL(url);
+        info.addSection('Home', info.url.protocol + '//' + info.url.hostname);
 
-        return this.constructor.processWebsiteSections(analysis)
+        return this.constructor.processWebsiteSections(info)
             .then(() => this.constructor.parseGlassdoor(
-                analysis,
-                analysis.name
-                    ? [analysis.url.hostname, analysis.name]
-                    : [analysis.url.hostname]
+                info,
+                info.name
+                    ? [info.url.hostname, info.name]
+                    : [info.url.hostname]
             ))
-            .then(() => analysis);
+            .then(() => info);
     }
 
     analyzeText(text) {
-        const analysis = new CompanyAnalysis(text);
+        const info = new CompanyInformation(text);
 
-        return this.constructor.parseGlassdoor(analysis, [text])
+        return this.constructor.parseGlassdoor(info, [text])
             .then(() => {
-                if (analysis.url) {
-                    analysis.addSection('Home', analysis.url.protocol + '//' + analysis.url.hostname);
-                    return this.constructor.processWebsiteSections(analysis);
+                if (info.url) {
+                    info.addSection('Home', info.url.protocol + '//' + info.url.hostname);
+                    return this.constructor.processWebsiteSections(info);
                 }
             })
-            .then(() => analysis);
+            .then(() => info);
     }
 
-    static processWebsiteSections(analysis, url = null, processedUrls = []) {
+    static processWebsiteSections(info, url = null, processedUrls = []) {
         if (url === null) {
-            url = analysis.sections['Home'];
+            url = info.sections['Home'];
         }
-        return this.parseWebsite(analysis, url)
+        return this.parseWebsite(info, url)
             .then(url => {
                 processedUrls.push(url);
 
-                for (let section in analysis.sections) {
-                    if (processedUrls.indexOf(analysis.sections[section]) === -1) {
-                        return this.processWebsiteSections(analysis, analysis.sections[section], processedUrls);
+                for (let section in info.sections) {
+                    if (processedUrls.indexOf(info.sections[section]) === -1) {
+                        return this.processWebsiteSections(info, info.sections[section], processedUrls);
                     }
                 }
 
-                if (analysis.source.startsWith('http') && processedUrls.indexOf(analysis.source) === -1) {
-                    return this.processWebsiteSections(analysis, analysis.source, processedUrls);
+                if (info.source.startsWith('http') && processedUrls.indexOf(info.source) === -1) {
+                    return this.processWebsiteSections(info, info.source, processedUrls);
                 }
             });
     }
 
-    static parseWebsite(analysis, url) {
+    static parseWebsite(info, url) {
         return fetch(url)
             .then(res => res.text())
-            .then(html => this.prepareWebsiteDom(analysis, html))
+            .then(html => this.prepareWebsiteDom(info, html))
             .then(dom => {
                 this.searchSections(
-                    analysis,
+                    info,
                     dom,
                     {
                         'Careers': /careers/gi,
@@ -72,20 +74,20 @@ export default class CompanyAnalyzer {
 
                 return dom.body.textContent;
             })
-            .then(text => browser.runtime.sendMessage({action: 'get-keywords'}).then(keywords => {
+            .then(text => Extension.sendMessage('get-keywords').then(keywords => {
                 for (let name in keywords) {
                     keywords[name] = new RegExp(keywords[name], 'gi');
                 }
                 return { keywords, text };
             }))
             .then(({ keywords, text }) => {
-                this.searchKeywords(analysis, text, keywords);
+                this.searchKeywords(info, text, keywords);
 
                 return url;
             });
     }
 
-    static parseGlassdoor(analysis, searchTerms) {
+    static parseGlassdoor(info, searchTerms) {
         return fetch(this.glassdoorSearchUrl(searchTerms.shift()))
             .then(res => res.text())
             .then(html => {
@@ -97,7 +99,7 @@ export default class CompanyAnalyzer {
                     if (resultDivs.length > 0) {
                         const resultDiv = resultDivs[0];
 
-                        analysis.glassdoor = {
+                        info.glassdoor = {
                             url: 'https://www.glassdoor.com/' +
                                 resultDiv.getElementsByClassName('header')[0].getElementsByTagName('a')[0].getAttribute('href'),
                             name: resultDiv.getElementsByClassName('header')[0].children[0].textContent,
@@ -105,22 +107,22 @@ export default class CompanyAnalyzer {
 
                         const logos = resultDiv.getElementsByClassName('logo')[0].getElementsByTagName('img');
                         if (logos.length > 0) {
-                            analysis.glassdoor.image_url = logos[0].src;
+                            info.glassdoor.image_url = logos[0].src;
                         }
 
                         const rating = resultDiv.getElementsByClassName('bigRating');
                         if (rating.length > 0) {
-                            analysis.glassdoor.total_reviews = parseInt(
+                            info.glassdoor.total_reviews = parseInt(
                                 resultDiv.getElementsByClassName('empLinks')[0]
                                     .getElementsByClassName('reviews')[0]
                                     .getElementsByClassName('num')[0].innerText
                             );
-                            analysis.glassdoor.rating = parseFloat(rating[0].innerText);
+                            info.glassdoor.rating = parseFloat(rating[0].innerText);
                         } else {
-                            analysis.glassdoor.total_reviews = 0;
+                            info.glassdoor.total_reviews = 0;
                         }
 
-                        if (!analysis.url) {
+                        if (!info.url) {
                             const webInfo = resultDiv.getElementsByClassName('webInfo');
                             if (webInfo.length > 0) {
                                 const urls = webInfo[0].getElementsByClassName('url');
@@ -129,7 +131,7 @@ export default class CompanyAnalyzer {
                                     if (!url.startsWith('http')) {
                                         url = 'http://' + url;
                                     }
-                                    analysis.url = new URL(url);
+                                    info.url = new URL(url);
                                 }
                             }
                         }
@@ -139,55 +141,55 @@ export default class CompanyAnalyzer {
                 }
 
                 if (searchTerms.length > 0) {
-                    return this.parseGlassdoor(analysis, searchTerms);
+                    return this.parseGlassdoor(info, searchTerms);
                 }
             });
     }
 
-    static prepareWebsiteDom(analysis, html) {
+    static prepareWebsiteDom(info, html) {
         const dom = this.domParser.parseFromString(html, 'text/html');
 
         while (dom.body.getElementsByTagName('script').length > 0) {
             dom.body.getElementsByTagName('script')[0].remove();
         }
 
-        if (!analysis.name) {
+        if (!info.name) {
             const titles = dom.head.getElementsByTagName('title');
             if (titles.length > 0) {
                 let name = titles[0].innerText;
 
                 const separators = ['-', '|', '–', '—'];
-                const domainBasename = analysis.url.hostname.split('.').reduce((a, b) => a.length > b.length ? a : b);
+                const domainBasename = info.url.hostname.split('.').reduce((a, b) => a.length > b.length ? a : b);
                 for (let separator of separators) {
                     name = name.split(separator).map(str => str.trim()).reduce((a, b) => {
                         return stringsSimilarity(a, domainBasename) > stringsSimilarity(b, domainBasename) ? a : b;
                     });
                 }
 
-                analysis.name = name;
+                info.name = name;
             }
         }
 
         return dom;
     }
 
-    static searchSections(analysis, dom, sections) {
+    static searchSections(info, dom, sections) {
         for (let link of dom.body.getElementsByTagName('a')) {
             const url = link.getAttribute('href');
             if (url && !url.startsWith('mailto:')) {
                 for (let name in sections) {
-                    if (!(name in analysis.sections) && link.innerText.trim().match(sections[name]) !== null) {
-                        analysis.addSection(name, url);
+                    if (!(name in info.sections) && link.innerText.trim().match(sections[name]) !== null) {
+                        info.addSection(name, url);
                     }
                 }
             }
         }
     }
 
-    static searchKeywords(analysis, text, keywords) {
+    static searchKeywords(info, text, keywords) {
         for (let name in keywords) {
             const matches = text.match(keywords[name]);
-            analysis.addKeyword(name, (matches && matches.length) || 0);
+            info.addKeyword(name, (matches && matches.length) || 0);
         }
     }
 

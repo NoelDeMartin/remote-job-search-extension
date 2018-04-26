@@ -1,9 +1,9 @@
 <template>
 
-    <div class="p-4 bg-grey-lighter w-screen h-screen flex flex-col items-center justify-start">
+    <div class="p-4 bg-grey-lighter w-screen h-screen flex flex-col items-center justify-start overflow-auto">
 
         <h1
-            v-if="!analysis"
+            v-if="!info"
             class="text-sm"
         >
             Analyzing {{ source }}...
@@ -11,15 +11,15 @@
 
         <div
             v-else
-            class="flex flex-col items-start w-full"
+            class="flex flex-col items-start w-full pb-4"
         >
 
-            <h1 class="text-3xl text-center w-full truncate">{{ analysis.name }}</h1>
-            <h2 class="text-base text-center w-full">{{ analysis.url.hostname }}</h2>
+            <h1 class="text-3xl text-center w-full truncate">{{ info.name }}</h1>
+            <h2 class="text-base text-center w-full">{{ info.url.hostname }}</h2>
 
             <div class="my-2 flex justify-around w-full">
                 <a
-                    v-for="(url, name) in analysis.sections"
+                    v-for="(url, name) in info.sections"
                     :key="name"
                     :href="url"
                     target="_blank"
@@ -33,7 +33,7 @@
 
             <table class="mx-4 my-2">
                 <tr
-                    v-for="(count, name) in analysis.keywords"
+                    v-for="(count, name) in info.keywords"
                     :key="name"
                 >
                     <td class="p-1 pr-2">{{ name }}</td>
@@ -41,7 +41,7 @@
                 </tr>
             </table>
 
-            <GlassdoorSummary :data="analysis.glassdoor" />
+            <GlassdoorSummary :data="info.glassdoor" />
 
         </div>
 
@@ -61,12 +61,12 @@ export default {
     data() {
         return {
             source: '',
-            analysis: null,
+            info: null,
         };
     },
     created() {
-        this.launchAnalysis().then(analysis => {
-            this.analysis = analysis;
+        this.launchAnalysis().then(info => {
+            this.info = info;
         });
     },
     methods: {

@@ -54,6 +54,8 @@
 <script>
 import Vue from 'vue';
 
+import Extension from '../lib/Extension';
+
 export default {
     data() {
         return {
@@ -63,7 +65,7 @@ export default {
         };
     },
     created() {
-        browser.runtime.sendMessage({action: 'get-keywords'}).then(keywords => {
+        Extension.sendMessage('get-keywords').then(keywords => {
             this.keywords = keywords;
         });
     },
@@ -81,12 +83,7 @@ export default {
             this.updateKeywords();
         },
         updateKeywords() {
-            browser.runtime.sendMessage({
-                action: 'update-keywords',
-                data: {
-                    keywords: {...this.keywords},
-                },
-            });
+            Extension.sendMessage('update-keywords', { keywords: {...this.keywords} });
         },
     },
 };
