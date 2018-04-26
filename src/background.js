@@ -1,18 +1,29 @@
 browser.contextMenus.create({
     id: 'inspect',
-    title: 'Inspect for remote jobs',
+    title: 'Search remote company',
     icons: {
         '16': 'icons/icon.svg',
         '32': 'icons/icon.svg',
     },
-    contexts: ['link'],
+    contexts: [
+        'selection',
+        'link',
+        'page',
+    ],
 });
 
 browser.contextMenus.onClicked.addListener(function(info, tab) {
     if (info.menuItemId === 'inspect') {
+        console.log(info);
+        let url = 'build/panel.html?';
+        if (info.selectionText) {
+            url += 'text=' + encodeURIComponent(info.selectionText);
+        } else if (info.linkUrl || info.pageUrl) {
+            url += 'link=' + encodeURIComponent(info.linkUrl || info.pageUrl);
+        }
         browser.windows.create({
+            url,
             type: 'panel',
-            url: 'build/panel.html?url=' + encodeURIComponent(info.linkUrl),
             width: 500,
             height: 400,
         });

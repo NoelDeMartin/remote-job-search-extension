@@ -1,6 +1,6 @@
 export default class {
-    constructor(url) {
-        this.url = new URL(url);
+    constructor(source) {
+        this.source = source;
         this.sections = {};
         this.keywords = {};
     }
@@ -22,9 +22,5 @@ export default class {
         } else {
             this.keywords[name] = count;
         }
-    }
-
-    get originalUrl() {
-        return this.url.href;
     }
 }

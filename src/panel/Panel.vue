@@ -6,7 +6,7 @@
             v-if="!analysis"
             class="text-sm"
         >
-            Loading {{ url }}...
+            Analyzing {{ source }}...
         </h1>
 
         <div
@@ -60,18 +60,28 @@ export default {
     },
     data() {
         return {
-            url: '',
+            source: '',
             analysis: null,
         };
     },
     created() {
-        const analyzer = new CompanyAnalyzer();
-        this.url = (new URL(location)).searchParams.get('url');
-        this.loading = true;
-        analyzer.analyze(this.url).then(analysis => {
-            this.loading = false;
+        this.launchAnalysis().then(analysis => {
             this.analysis = analysis;
         });
+    },
+    methods: {
+        launchAnalysis() {
+            const analyzer = new CompanyAnalyzer();
+            const url = new URL(location);
+
+            if (url.searchParams.get('link')) {
+                this.source = url.searchParams.get('link');
+                return analyzer.analyzeLink(this.source);
+            } else if (url.searchParams.get('text')) {
+                this.source = url.searchParams.get('text');
+                return analyzer.analyzeText(this.source);
+            }
+        },
     },
 };
 </script>

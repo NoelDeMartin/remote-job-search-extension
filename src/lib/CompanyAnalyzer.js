@@ -5,31 +5,53 @@ import { stringsSimilarity } from './utils';
 export default class CompanyAnalyzer {
     static domParser = new DOMParser();
 
-    analyze(url) {
+    analyzeLink(url) {
         const analysis = new CompanyAnalysis(url);
-        const processedUrls = [];
-        const processWebsiteSections = url => {
-            return this.constructor.parseWebsite(analysis, url)
-                .then(url => {
-                    processedUrls.push(url);
 
-                    for (let section in analysis.sections) {
-                        if (processedUrls.indexOf(analysis.sections[section]) === -1) {
-                            return processWebsiteSections(analysis.sections[section]);
-                        }
-                    }
-
-                    if (processedUrls.indexOf(analysis.originalUrl) === -1) {
-                        return processWebsiteSections(analysis.originalUrl);
-                    }
-                });
-        };
-
+        analysis.url = new URL(url);
         analysis.addSection('Home', analysis.url.protocol + '//' + analysis.url.hostname);
 
-        return processWebsiteSections(analysis.sections['Home'])
-            .then(() => this.constructor.parseGlassdoor(analysis))
+        return this.constructor.processWebsiteSections(analysis)
+            .then(() => this.constructor.parseGlassdoor(
+                analysis,
+                analysis.name
+                    ? [analysis.url.hostname, analysis.name]
+                    : [analysis.url.hostname]
+            ))
             .then(() => analysis);
+    }
+
+    analyzeText(text) {
+        const analysis = new CompanyAnalysis(text);
+
+        return this.constructor.parseGlassdoor(analysis, [text])
+            .then(() => {
+                if (analysis.url) {
+                    analysis.addSection('Home', analysis.url.protocol + '//' + analysis.url.hostname);
+                    return this.constructor.processWebsiteSections(analysis);
+                }
+            })
+            .then(() => analysis);
+    }
+
+    static processWebsiteSections(analysis, url = null, processedUrls = []) {
+        if (url === null) {
+            url = analysis.sections['Home'];
+        }
+        return this.parseWebsite(analysis, url)
+            .then(url => {
+                processedUrls.push(url);
+
+                for (let section in analysis.sections) {
+                    if (processedUrls.indexOf(analysis.sections[section]) === -1) {
+                        return this.processWebsiteSections(analysis, analysis.sections[section], processedUrls);
+                    }
+                }
+
+                if (analysis.source.startsWith('http') && processedUrls.indexOf(analysis.source) === -1) {
+                    return this.processWebsiteSections(analysis, analysis.source, processedUrls);
+                }
+            });
     }
 
     static parseWebsite(analysis, url) {
@@ -66,8 +88,8 @@ export default class CompanyAnalyzer {
             });
     }
 
-    static parseGlassdoor(analysis, useDomain = true) {
-        return fetch(this.glassdoorSearchUrl(useDomain ? analysis.url.hostname : analysis.name))
+    static parseGlassdoor(analysis, searchTerms) {
+        return fetch(this.glassdoorSearchUrl(searchTerms.shift()))
             .then(res => res.text())
             .then(html => {
                 const dom = this.domParser.parseFromString(html, 'text/html');
@@ -79,7 +101,8 @@ export default class CompanyAnalyzer {
                         const resultDiv = resultDivs[0];
 
                         analysis.glassdoor = {
-                            url: resultDiv.getElementsByClassName('header')[0].getElementsByTagName('a')[0].href,
+                            url: 'https://www.glassdoor.com/' +
+                                resultDiv.getElementsByClassName('header')[0].getElementsByTagName('a')[0].getAttribute('href'),
                             name: resultDiv.getElementsByClassName('header')[0].children[0].textContent,
                         };
 
@@ -100,12 +123,26 @@ export default class CompanyAnalyzer {
                             analysis.glassdoor.total_reviews = 0;
                         }
 
+                        if (!analysis.url) {
+                            const webInfo = resultDiv.getElementsByClassName('webInfo');
+                            if (webInfo.length > 0) {
+                                const urls = webInfo[0].getElementsByClassName('url');
+                                if (urls.length > 0) {
+                                    let url = urls[0].innerText;
+                                    if (!url.startsWith('http')) {
+                                        url = 'http://' + url;
+                                    }
+                                    analysis.url = new URL(url);
+                                }
+                            }
+                        }
+
                         return;
                     }
                 }
 
-                if (useDomain) {
-                    return this.parseGlassdoor(analysis, false);
+                if (searchTerms.length > 0) {
+                    return this.parseGlassdoor(analysis, searchTerms);
                 }
             });
     }
