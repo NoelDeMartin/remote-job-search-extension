@@ -1,5 +1,8 @@
 # Remote Job Search
 
+
+**[Firefox](https://addons.mozilla.org/addon/remote-jobs-search/) | [Chrome](https://chrome.google.com/webstore/detail/remote-jobs-search/cflmkkfnpepkkmdeaplimakaiabflpfi)**
+
 Browser extension that helps you on your remote job search. Once installed, analyze how remote a company is using one of the following actions:
 
 - Contextual menu on link.

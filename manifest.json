@@ -1,7 +1,7 @@
 {
 
     "manifest_version": 2,
-    "name": "remote-jobs-search-extension",
+    "name": "remote-jobs-search",
     "version": "0.0.1",
 
     "description": "Browser extension that helps you on your remote job search",
