@@ -72,17 +72,14 @@ export default class CompanyAnalyzer {
 
                 return dom.body.textContent;
             })
-            .then(text => {
-                this.searchKeywords(
-                    analysis,
-                    text,
-                    {
-                        'Remote': /remote/gi,
-                        'Distributed': /distributed/gi,
-                        'Decentralized': /decentralized/gi,
-                        'Work anywhere': /work\sanywhere/gi,
-                    }
-                );
+            .then(text => browser.runtime.sendMessage({action: 'get-keywords'}).then(keywords => {
+                for (let name in keywords) {
+                    keywords[name] = new RegExp(keywords[name], 'gi');
+                }
+                return { keywords, text };
+            }))
+            .then(({ keywords, text }) => {
+                this.searchKeywords(analysis, text, keywords);
 
                 return url;
             });

@@ -29,3 +29,30 @@ browser.contextMenus.onClicked.addListener(function(info, tab) {
         });
     }
 });
+
+let keywords = {};
+
+browser.storage.local.get('keywords').then(newKeywords => {
+    if (Object.keys(newKeywords).length > 0) {
+        keywords = newKeywords;
+    } else {
+        keywords = {
+            'Remote': 'remote',
+            'Distributed': 'distributed',
+            'Decentralized': 'decentralized',
+            'Work anywhere': 'work\\sanywhere',
+        };
+    }
+});
+
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    switch (message.action) {
+        case 'get-keywords':
+            sendResponse(keywords);
+            break;
+        case 'update-keywords':
+            keywords = message.data.keywords;
+            browser.storage.local.set('keywords', keywords);
+            break;
+    }
+});

@@ -12,6 +12,13 @@
         "128": "icons/icon.svg"
     },
 
+    "browser_action": {
+        "browser_style": false,
+        "default_icon": "icons/icon.svg",
+        "default_title": "Remote Jobs Search",
+        "default_popup": "build/popup.html"
+    },
+
     "background": {
         "scripts": ["build/background.js"]
     },

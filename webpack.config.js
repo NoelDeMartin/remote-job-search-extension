@@ -9,6 +9,11 @@ module.exports = {
 
     entry: {
         background: ['./src/background.js'],
+        popup: [
+            './src/popup/popup.scss',
+            './src/popup/popup.html',
+            './src/popup/popup.js',
+        ],
         panel: [
             './src/panel/panel.scss',
             './src/panel/panel.html',
