@@ -7,14 +7,15 @@
     "description": "Browser extension that helps you on your remote job search",
 
     "icons": {
-        "48": "icons/icon.svg",
-        "96": "icons/icon.svg",
-        "128": "icons/icon.svg"
+        "16": "icons/icon-16.png",
+        "48": "icons/icon-48.png",
+        "96": "icons/icon-96.png",
+        "128": "icons/icon-128.png"
     },
 
     "browser_action": {
         "browser_style": false,
-        "default_icon": "icons/icon.svg",
+        "default_icon": "icons/icon-48.png",
         "default_title": "Remote Jobs Search",
         "default_popup": "build/popup.html"
     },

@@ -1,8 +1,8 @@
 let Api;
 
-if (browser) {
+if (typeof browser !== 'undefined') {
     Api = require('./platforms/firefox/ExtensionAPI.js').default;
-} else if (chrome) {
+} else if (typeof chrome !== 'undefined') {
     Api = require('./platforms/chrome/ExtensionAPI.js').default;
 }
 

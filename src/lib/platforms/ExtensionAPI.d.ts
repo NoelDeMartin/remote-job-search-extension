@@ -23,11 +23,9 @@ interface ExtensionStorage {
 type MenuItemOptions = {
     id: string,
     checked?: boolean,
-    command?: string,
     contexts?: string[],
     documentUrlPatterns?: string | string[],
     enabled?: boolean,
-    icons?: Object,
     onclick?: Function,
     parentId?: integer | string,
     targetUrlPatterns?: string | string[],

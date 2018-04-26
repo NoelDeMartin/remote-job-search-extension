@@ -9,7 +9,7 @@ const panel = new Vue({
 panel.$mount('#panel');
 
 // Bug workaround for FF57: https://bugzilla.mozilla.org/show_bug.cgi?id=1425829
-if (browser) {
+if (typeof browser !== 'undefined') {
     setTimeout(() => {
         browser.windows.getCurrent().then(currentWindow => {
             browser.windows.update(currentWindow.id, {

@@ -21,10 +21,6 @@ Extension.addMenuItem(
     {
         id: 'inspect',
         title: 'Search remote company',
-        icons: {
-            '16': 'icons/icon.svg',
-            '32': 'icons/icon.svg',
-        },
         contexts: [
             'selection',
             'link',

@@ -61,6 +61,8 @@ export default class CompanyAnalyzer {
             .then(res => res.text())
             .then(html => this.prepareWebsiteDom(info, html))
             .then(dom => {
+                info.found = true;
+
                 this.searchSections(
                     info,
                     dom,
@@ -99,6 +101,7 @@ export default class CompanyAnalyzer {
                     if (resultDivs.length > 0) {
                         const resultDiv = resultDivs[0];
 
+                        info.found = true;
                         info.glassdoor = {
                             url: 'https://www.glassdoor.com/' +
                                 resultDiv.getElementsByClassName('header')[0].getElementsByTagName('a')[0].getAttribute('href'),

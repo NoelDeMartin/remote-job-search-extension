@@ -4,13 +4,13 @@
 
         <h1
             v-if="!info"
-            class="text-sm"
+            class="text-sm text-center"
         >
-            Analyzing {{ source }}...
+            Searching {{ source }}...
         </h1>
 
         <div
-            v-else
+            v-else-if="info.found"
             class="flex flex-col items-start w-full pb-4"
         >
 
@@ -45,6 +45,30 @@
 
         </div>
 
+        <div
+            v-else
+            class="flex flex-col items-center w-full pb-4"
+        >
+
+            <h1 class="text-2xl text-center">Nothing found</h1>
+
+            <input
+                v-model="source"
+                class="appearance-none border w-full py-2 px-3 m-2 text-grey-darker rounded"
+                placeholder="Search"
+                type="text"
+            >
+
+            <button
+                :disabled="source.trim().length === 0"
+                class="bg-blue hover:bg-blue-dark text-white font-bold py-2 px-4 rounded"
+                @click="retryTextSearch"
+            >
+                Try Again
+            </button>
+
+        </div>
+
     </div>
 
 </template>
@@ -64,6 +88,11 @@ export default {
             info: null,
         };
     },
+    computed: {
+        analyzer() {
+            return new CompanyAnalyzer();
+        },
+    },
     created() {
         this.launchAnalysis().then(info => {
             this.info = info;
@@ -71,16 +100,21 @@ export default {
     },
     methods: {
         launchAnalysis() {
-            const analyzer = new CompanyAnalyzer();
             const url = new URL(location);
 
             if (url.searchParams.get('link')) {
                 this.source = url.searchParams.get('link');
-                return analyzer.analyzeLink(this.source);
+                return this.analyzer.analyzeLink(this.source);
             } else if (url.searchParams.get('text')) {
                 this.source = url.searchParams.get('text');
-                return analyzer.analyzeText(this.source);
+                return this.analyzer.analyzeText(this.source);
             }
+        },
+        retryTextSearch() {
+            this.info = null;
+            return this.analyzer.analyzeText(this.source).then(info => {
+                this.info = info;
+            });
         },
     },
 };
